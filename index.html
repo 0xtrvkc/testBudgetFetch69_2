@@ -738,35 +738,94 @@ function buildBoxplot(data){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   WATERFALL CHART
+   Bubble CHART
 ═══════════════════════════════════════════════════════════ */
-function buildWaterfall(data){
-  const tB=data.reduce((s,d)=>s+d.budget,0);
-  const tA=data.reduce((s,d)=>s+d.actual,0);
-  const tC=data.reduce((s,d)=>s+d.committed,0);
-  const tAC=data.reduce((s,d)=>s+d.actComm,0);
-  const tX=data.reduce((s,d)=>s+d.xfer,0);
-  const rem=tB-tAC;
-  // Steps: แผนงบ, โอนเพิ่ม, ใช้จริง(ลด), ผูกพัน(ลด), คงเหลือ
-  const labels=['แผนงบประมาณ','งบโอนเปลี่ยนแปลง','ใช้จริง','ผูกพัน','คงเหลือ'];
-  // Stacked bar trick: base (transparent) + bar value
-  // values: [0, tB, tB+tX, ... ]
-  const bases=[0, tB, tB+tX, tB+tX-tA, tB+tX-tA-tC];
-  const barVals=[tB, tX, tA, tC, rem<0?0:rem];
-  const barColors=['#0078d4','#8764b8','#d13438','#ca5010','#107c10'];
-  mkChart('waterfallChart',{type:'bar',
-    data:{labels,datasets:[
-      {label:'_base',data:bases,backgroundColor:'transparent',borderWidth:0,stack:'wf'},
-      {label:'มูลค่า',data:barVals,backgroundColor:barColors,borderWidth:0,borderRadius:4,stack:'wf'},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},
+function buildBubble(data){
+  const valid=data.filter(d=>d.budget>0&&d.pctActComm>0);
+  const sorted=[...valid].sort((a,b)=>b.budget-a.budget);
+  const maxB=Math.max(...sorted.map(d=>d.budget));
+  const minR=8, maxR=42;
+
+  const bubbleData=sorted.map((d,i)=>({
+    x: i+1,
+    y: d.pctActComm,
+    r: minR + (d.budget/maxB)*(maxR-minR),
+    dept: d
+  }));
+
+  const bgColors=bubbleData.map(p=>
+    p.dept.pctActComm>100?'rgba(209,52,56,0.75)':
+    p.dept.pctActComm<40?'rgba(242,200,17,0.85)':
+    'rgba(0,120,212,0.65)'
+  );
+  const borderColors=bubbleData.map(p=>
+    p.dept.pctActComm>100?'#d13438':
+    p.dept.pctActComm<40?'#ca5010':
+    '#0078d4'
+  );
+
+  const tgt60={id:'bubble60',afterDatasetsDraw(ch){
+    const {ctx,scales:{x,y},chartArea}=ch;
+    const yt=y.getPixelForValue(60);
+    ctx.save();
+    ctx.strokeStyle='rgba(16,124,16,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(chartArea.left,yt);ctx.lineTo(chartArea.right,yt);ctx.stroke();
+    ctx.setLineDash([]);ctx.font='11px IBM Plex Sans Thai,sans-serif';
+    ctx.fillStyle='#107c10';ctx.textAlign='right';
+    ctx.fillText('เป้า 60%',chartArea.right-6,yt-5);
+    ctx.restore();
+  }};
+
+  const wrap=document.getElementById('waterfall-wrap');
+  wrap.style.height='340px';
+
+  mkChart('waterfallChart',{
+    type:'bubble',
+    data:{datasets:[{
+      label:'ส่วนงาน',
+      data:bubbleData,
+      backgroundColor:bgColors,
+      borderColor:borderColors,
+      borderWidth:1.5
+    }]},
+    plugins:[tgt60],
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
         tooltip:{callbacks:{
-          label:ctx=>{if(ctx.datasetIndex===0)return null;return ` ${labels[ctx.dataIndex]}: ${fmt(ctx.parsed.y)} บาท`},
-        },bodyFont:{size:13},titleFont:{size:14}}},
-      scales:{x:{ticks:{font:{size:13}},grid:{display:false}},
-        y:{ticks:{font:{size:12},callback:v=>{const b=Math.abs(v);return b>=1e9?(b/1e9).toFixed(1)+'B':b>=1e6?(b/1e6).toFixed(0)+'M':b.toLocaleString()}},
-        grid:{color:'#eef2f7'}}}}
+          label:ctx=>{
+            const d=ctx.raw.dept;
+            return [
+              ` ${d.codeStr} ${d.shortName}`,
+              ` % เบิก: ${d.pctActComm.toFixed(2)}%`,
+              ` แผน: ${fmt(d.budget)} บาท`,
+              ` จริง+ผูกพัน: ${fmt(d.actComm)} บาท`
+            ];
+          }
+        },bodyFont:{size:12},titleFont:{size:13},padding:10}
+      },
+      scales:{
+        x:{
+          title:{display:true,text:'ส่วนงาน (เรียงตามงบจากมากไปน้อย)',font:{size:12}},
+          ticks:{
+            font:{size:11},
+            callback:(v)=>{
+              const d=sorted[v-1];
+              return d?d.codeStr:'';
+            }
+          },
+          grid:{color:'#eef2f7'},
+          min:0, max:sorted.length+1
+        },
+        y:{
+          title:{display:true,text:'ร้อยละการเบิกจ่าย (%)',font:{size:12}},
+          ticks:{font:{size:11},callback:v=>v+'%'},
+          grid:{color:'#eef2f7'},
+          min:0
+        }
+      }
+    }
   });
 }
 

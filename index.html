@@ -31,7 +31,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 
 /* ── HEADER ── */
 header{background:linear-gradient(90deg,#0a2f4e 0%,#0d3d66 55%,#0f5090 100%);color:#fff;padding:0 28px;height:72px;display:flex;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,0.35);position:sticky;top:0;z-index:100;gap:18px}
-/*.logo-badge{width:44px;height:44px;background:#f2c811;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:var(--fs-md);color:#0a2f4e;flex-shrink:0}*/
+.logo-badge{width:44px;height:44px;background:#f2c811;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:var(--fs-md);color:#0a2f4e;flex-shrink:0}
 .header-title-main{font-size:var(--fs-xl);font-weight:700;color:#fff;line-height:1.2}
 .header-title-sub{font-size:var(--fs-xs);color:rgba(255,255,255,0.62);margin-top:2px}
 .header-spacer{flex:1}
@@ -64,7 +64,7 @@ header{background:linear-gradient(90deg,#0a2f4e 0%,#0d3d66 55%,#0f5090 100%);col
 .kpi-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
 .kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kpi-color,var(--accent))}
 .kpi-label{font-size:var(--fs-xs);color:var(--text-secondary);font-weight:600;margin-bottom:8px;line-height:1.3}
-.kpi-value{font-size:clamp(1.1rem, 1.3vw, 1.9rem);font-weight:700;color:var(--text-primary);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-value{font-size:var(--fs-kpi);font-weight:700;color:var(--text-primary);line-height:1;word-break:break-word}
 .kpi-sub{font-size:var(--fs-xs);color:var(--text-muted);margin-top:6px;line-height:1.5}
 .kpi-trend{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-xs);font-weight:700;padding:3px 9px;border-radius:2px;margin-top:7px}
 .trend-ok{background:var(--success-light);color:var(--success)}
@@ -225,6 +225,7 @@ tr:hover td{background:#f4f8fd;cursor:pointer}
 
 <!-- HEADER -->
 <header>
+  <div class="logo-badge">MU</div>
   <div>
     <div class="header-title-main" id="header-title">สรุปผลการเบิกจ่ายปีงบประมาณ 2569 (รายรับ-จ่าย)</div>
     <div class="header-title-sub">มหาวิทยาลัยมหิดล · ข้อมูลเรียลไทม์จาก Google Sheets</div>
@@ -303,8 +304,8 @@ tr:hover td{background:#f4f8fd;cursor:pointer}
     </div>
   </div>
 
-  <!-- Row 2: Gauge + Boxplot + Anomaly -->
-  <div class="row row-3">
+  <!-- Row 2: Gauge + Boxplot + Normal Curve + Anomaly -->
+  <div class="row row-4">
     <div class="card">
       <div class="card-header"><div>
         <div class="card-title">ภาพรวมการเบิกจ่ายมหาวิทยาลัย</div>
@@ -317,10 +318,19 @@ tr:hover td{background:#f4f8fd;cursor:pointer}
     <div class="card">
       <div class="card-header"><div>
         <div class="card-title">การกระจายตัว % เบิกจ่าย (Boxplot + Jitter)</div>
-        <div class="card-sub">จุดแดง = Outlier · ◆ เหลือง = ค่าเฉลี่ย · เส้นเขียว = เป้า 60%</div>
+        <div class="card-sub">จุดแดง = Outlier · ◆ เหลือง = ค่าเฉลี่ย · เส้นเขียว = <span id="boxplot-target-label">เกณฑ์ (mean − 0.5SD)</span></div>
       </div></div>
       <div class="card-body" style="padding:14px 18px">
         <div style="position:relative" id="boxplot-wrap"><canvas id="boxplotChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div>
+        <div class="card-title">การแจกแจงแบบปกติ (Normal Distribution)</div>
+        <div class="card-sub" id="norm-curve-sub">เส้นโค้ง SD · พื้นที่สีแต่ละโซน = ±1SD, ±2SD, ±3SD</div>
+      </div></div>
+      <div class="card-body" style="padding:14px 18px">
+        <div style="position:relative;height:420px"><canvas id="normalCurveChart"></canvas></div>
       </div>
     </div>
     <div class="card">
@@ -338,8 +348,8 @@ tr:hover td{background:#f4f8fd;cursor:pointer}
   <div class="row row-2">
     <div class="card">
       <div class="card-header"><div>
-        <div class="card-title">Bubble Chart — งบ vs % เบิกจ่าย จำแนกตามส่วนงาน</div>
-<div class="card-sub">ขนาด Bubble = งบประมาณ · 🔴 เกิน 100% · 🟡 ต่ำ &lt;40% · 🔵 ปกติ · เส้นเขียว = เป้า 60%</div>
+        <div class="card-title">Waterfall — งบประมาณ → ใช้จริง → ผูกพัน → คงเหลือ</div>
+        <div class="card-sub">แสดงขั้นตอนการใช้งบรวมทั้งมหาวิทยาลัย (บาท)</div>
       </div></div>
       <div class="card-body" style="padding:14px 18px">
         <div style="position:relative" id="waterfall-wrap"><canvas id="waterfallChart"></canvas></div>
@@ -611,31 +621,17 @@ function buildPctChart(data){
   const colors=vals.map(v=>v>100?'rgba(209,52,56,0.85)':v<40?'rgba(242,200,17,0.9)':'rgba(0,120,212,0.78)');
   const maxP=Math.max(...vals,0),minP=Math.min(...vals.filter(v=>v>0),0);
   document.getElementById('pct-range-badge').textContent=`ช่วง: ${minP.toFixed(1)}% – ${maxP.toFixed(1)}%`;
-
   const wrap=document.getElementById('pct-chart-wrap');
-  const FIXED_HEIGHT=520; // fixed visible height in px
-  const scrollHeight=Math.max(sorted.length*20+60, FIXED_HEIGHT);
-  wrap.style.height=FIXED_HEIGHT+'px';
-  wrap.style.overflowY='auto';
-  wrap.style.overflowX='hidden';
-
-  // inner canvas container must be taller to hold all bars
-  let inner=wrap.querySelector('.pct-inner');
-  if(!inner){inner=document.createElement('div');inner.className='pct-inner';inner.style.position='relative';wrap.appendChild(inner);}
-  // move canvas into inner if not already
-  const canvas=document.getElementById('pctChart');
-  if(canvas.parentElement!==inner){inner.appendChild(canvas);}
-  inner.style.height=scrollHeight+'px';
-
+  wrap.style.height=(sorted.length*27+60)+'px';
   mkChart('pctChart',{
     type:'bar',
-    data:{labels,datasets:[{label:'% เบิกจ่าย (จริง+ผูกพัน)',data:vals,backgroundColor:colors,borderWidth:1,borderRadius:2,barThickness:14}]},
+    data:{labels,datasets:[{label:'% เบิกจ่าย (จริง+ผูกพัน)',data:vals,backgroundColor:colors,borderWidth:1,borderRadius:2}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:ctx=>{const d=sorted[ctx[0].dataIndex];return d.codeStr+' '+d.shortName},
         label:ctx=>[` % จริง+ผูกพัน: ${ctx.parsed.x.toFixed(2)}%`,` แผน: ${fmt(sorted[ctx[0].dataIndex].budget)} บาท`,` จริง+ผูกพัน: ${fmt(sorted[ctx[0].dataIndex].actComm)} บาท`]
       },bodyFont:{size:13},titleFont:{size:14}}},
-      scales:{x:{min:0,max:Math.max(120,...vals.map(v=>v+8)),ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'#eef2f7'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}
+      scales:{x:{min:0,max:Math.max(120,...vals.map(v=>v+8)),ticks:{font:{size:13},callback:v=>v+'%'},grid:{color:'#eef2f7'}},y:{ticks:{font:{size:13}},grid:{display:false}}}}
   });
 }
 
@@ -712,13 +708,23 @@ function buildBoxplot(data){
     ctx.fillStyle='#d13438';ctx.fillText(`เฉลี่ย: ${mn.toFixed(1)}%`,lx,ymn+4);
     ctx.restore();
   }};
-  const tgt60={id:'t60',afterDatasetsDraw(ch){
+  // Dynamic target = mean − 0.5×SD (lower "acceptable" boundary derived from this dataset's own distribution)
+  // Rationale: units below this line are performing more than half a standard deviation under the group mean —
+  // a statistically meaningful signal that warrants attention, without relying on any political assumption.
+  const dynTarget=mn - 0.5*stddev(vals);
+  // Update subtitle label
+  const tlEl=document.getElementById('boxplot-target-label');
+  if(tlEl)tlEl.textContent=`เกณฑ์ต่ำสุด (mean − 0.5SD) = ${dynTarget.toFixed(1)}%`;
+
+  const tgtDyn={id:'tDyn',afterDatasetsDraw(ch){
     const {ctx,scales:{x,y},chartArea}=ch;
-    const yt=y.getPixelForValue(60);
-    ctx.save();ctx.strokeStyle='rgba(16,124,16,0.75)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    const yt=y.getPixelForValue(dynTarget);
+    ctx.save();
+    ctx.strokeStyle='rgba(16,124,16,0.80)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(chartArea.left,yt);ctx.lineTo(chartArea.right,yt);ctx.stroke();
-    ctx.setLineDash([]);ctx.font='12px IBM Plex Sans Thai,sans-serif';ctx.fillStyle='#107c10';
-    ctx.textAlign='right';ctx.fillText('เป้าหมาย 60%',chartArea.right-8,yt-6);ctx.restore();
+    ctx.setLineDash([]);ctx.font='bold 12px IBM Plex Sans Thai,sans-serif';ctx.fillStyle='#107c10';
+    ctx.textAlign='right';ctx.fillText(`เกณฑ์ต่ำสุด (mean−0.5SD): ${dynTarget.toFixed(1)}%`,chartArea.right-8,yt-7);
+    ctx.restore();
   }};
   const wrap=document.getElementById('boxplot-wrap');wrap.style.height='420px';
   mkChart('boxplotChart',{type:'scatter',
@@ -726,7 +732,7 @@ function buildBoxplot(data){
       backgroundColor:pointData.map(p=>p.isOut?'rgba(209,52,56,0.85)':'rgba(0,120,212,0.4)'),
       borderColor:pointData.map(p=>p.isOut?'#d13438':'#0078d4'),
       borderWidth:1,pointRadius:5,pointHoverRadius:7}]},
-    plugins:[boxPlugin,tgt60],
+    plugins:[boxPlugin,tgtDyn],
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:ctx=>ctx.raw.label?[` ${ctx.raw.label}`,` % เบิก: ${ctx.raw.y.toFixed(2)}%`]:null
@@ -737,94 +743,180 @@ function buildBoxplot(data){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   bubble CHART
+   NORMAL DISTRIBUTION CURVE
+   — horizontal axis = % disbursement, vertical = probability density
+   — coloured bands: ±1SD (blue), ±2SD (yellow), ±3SD (red)
+   — vertical markers: mean, ±1SD, ±2SD, dynamic target
 ═══════════════════════════════════════════════════════════ */
-function buildBubble(data){
-  const valid=data.filter(d=>d.budget>0&&d.pctActComm>0);
-  const sorted=[...valid].sort((a,b)=>b.budget-a.budget);
-  const maxB=Math.max(...sorted.map(d=>d.budget));
-  const minR=8, maxR=42;
+function buildNormalCurve(data){
+  const vals=data.map(d=>d.pctActComm).filter(v=>v>0);
+  if(vals.length<4)return;
+  const mn=mean(vals);
+  const sd=stddev(vals);
+  const dynTarget=mn-0.5*sd;
 
-  const bubbleData=sorted.map((d,i)=>({
-    x: i+1,
-    y: d.pctActComm,
-    r: minR + (d.budget/maxB)*(maxR-minR),
-    dept: d
-  }));
+  // Update subtitle
+  const subEl=document.getElementById('norm-curve-sub');
+  if(subEl)subEl.textContent=
+    `μ = ${mn.toFixed(2)}%  ·  σ = ${sd.toFixed(2)}%  ·  เกณฑ์ (μ−0.5σ) = ${dynTarget.toFixed(2)}%`;
 
-  const bgColors=bubbleData.map(p=>
-    p.dept.pctActComm>100?'rgba(209,52,56,0.75)':
-    p.dept.pctActComm<40?'rgba(242,200,17,0.85)':
-    'rgba(0,120,212,0.65)'
-  );
-  const borderColors=bubbleData.map(p=>
-    p.dept.pctActComm>100?'#d13438':
-    p.dept.pctActComm<40?'#ca5010':
-    '#0078d4'
-  );
+  // Normal PDF
+  const normpdf=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
 
-  const tgt60={id:'bubble60',afterDatasetsDraw(ch){
-    const {ctx,scales:{x,y},chartArea}=ch;
-    const yt=y.getPixelForValue(60);
-    ctx.save();
-    ctx.strokeStyle='rgba(16,124,16,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
-    ctx.beginPath();ctx.moveTo(chartArea.left,yt);ctx.lineTo(chartArea.right,yt);ctx.stroke();
-    ctx.setLineDash([]);ctx.font='11px IBM Plex Sans Thai,sans-serif';
-    ctx.fillStyle='#107c10';ctx.textAlign='right';
-    ctx.fillText('เป้า 60%',chartArea.right-6,yt-5);
-    ctx.restore();
-  }};
+  // X range: μ ± 3.5σ, 300 points
+  const xMin=mn-3.6*sd, xMax=mn+3.6*sd;
+  const N=300;
+  const step=(xMax-xMin)/N;
+  const xs=Array.from({length:N+1},(_,i)=>xMin+i*step);
+  const ys=xs.map(x=>normpdf(x,mn,sd));
 
-  const wrap=document.getElementById('waterfall-wrap');
-  wrap.style.height='340px';
+  // Zone fill datasets (filled area charts stacked manually)
+  function zonePoints(lo,hi){
+    return xs.filter(x=>x>=lo&&x<=hi).map(x=>({x,y:normpdf(x,mn,sd)}));
+  }
+  const z3=zonePoints(mn-3.5*sd,mn+3.5*sd); // ±3SD background
+  const z2=zonePoints(mn-2*sd,mn+2*sd);
+  const z1=zonePoints(mn-sd,mn+sd);
 
-  mkChart('waterfallChart',{
-    type:'bubble',
-    data:{datasets:[{
-      label:'ส่วนงาน',
-      data:bubbleData,
-      backgroundColor:bgColors,
-      borderColor:borderColors,
-      borderWidth:1.5
-    }]},
-    plugins:[tgt60],
+  // Actual data points as rug/dot at y≈0 (small ticks)
+  const rugData=vals.map(v=>({x:v,y:0.0008}));
+
+  // Vertical line plugin
+  const vlinePlugin={
+    id:'vlines',
+    afterDatasetsDraw(ch){
+      const {ctx,scales:{x,y},chartArea}=ch;
+      const lines=[
+        {v:mn,      color:'#0078d4', lw:2.5, dash:[],    label:`μ = ${mn.toFixed(1)}%`},
+        {v:mn+sd,   color:'rgba(0,120,212,0.55)', lw:1.5, dash:[5,4], label:`+1σ`},
+        {v:mn-sd,   color:'rgba(0,120,212,0.55)', lw:1.5, dash:[5,4], label:`-1σ`},
+        {v:mn+2*sd, color:'rgba(202,80,16,0.55)', lw:1.5, dash:[4,4], label:`+2σ`},
+        {v:mn-2*sd, color:'rgba(202,80,16,0.55)', lw:1.5, dash:[4,4], label:`-2σ`},
+        {v:dynTarget,color:'rgba(16,124,16,0.90)', lw:2,  dash:[6,3], label:`เกณฑ์\n${dynTarget.toFixed(1)}%`},
+      ];
+      ctx.save();
+      for(const l of lines){
+        const px=x.getPixelForValue(l.v);
+        if(px<chartArea.left||px>chartArea.right)continue;
+        ctx.strokeStyle=l.color;ctx.lineWidth=l.lw;ctx.setLineDash(l.dash);
+        ctx.beginPath();ctx.moveTo(px,chartArea.top);ctx.lineTo(px,chartArea.bottom);ctx.stroke();
+        ctx.setLineDash([]);
+        // Label at top
+        ctx.fillStyle=l.color;ctx.font=`bold 11px IBM Plex Sans Thai,sans-serif`;
+        ctx.textAlign='center';
+        const labelLines=l.label.split('\n');
+        labelLines.forEach((ln,li)=>ctx.fillText(ln,px,chartArea.top+13+li*13));
+      }
+      ctx.restore();
+    }
+  };
+
+  // Actual data points rug marks at bottom
+  const rugPlugin={
+    id:'rug',
+    afterDatasetsDraw(ch){
+      const {ctx,scales:{x,y},chartArea}=ch;
+      ctx.save();
+      vals.forEach(v=>{
+        const px=x.getPixelForValue(v);
+        const isOut=v<mn-2*sd||v>mn+2*sd;
+        ctx.strokeStyle=isOut?'#d13438':'rgba(0,120,212,0.55)';
+        ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(px,chartArea.bottom-1);ctx.lineTo(px,chartArea.bottom-9);ctx.stroke();
+      });
+      ctx.restore();
+    }
+  };
+
+  mkChart('normalCurveChart',{
+    type:'line',
+    data:{datasets:[
+      // ±3SD zone (lightest red)
+      {label:'±3SD',data:z3,fill:'origin',
+       backgroundColor:'rgba(209,52,56,0.07)',borderColor:'transparent',
+       pointRadius:0,tension:0.4,order:4},
+      // ±2SD zone (light yellow)
+      {label:'±2SD',data:z2,fill:'origin',
+       backgroundColor:'rgba(202,80,16,0.10)',borderColor:'transparent',
+       pointRadius:0,tension:0.4,order:3},
+      // ±1SD zone (blue)
+      {label:'±1SD',data:z1,fill:'origin',
+       backgroundColor:'rgba(0,120,212,0.14)',borderColor:'transparent',
+       pointRadius:0,tension:0.4,order:2},
+      // Main curve
+      {label:'Normal PDF',data:xs.map((x,i)=>({x,y:ys[i]})),fill:false,
+       borderColor:'#0078d4',borderWidth:2.5,
+       pointRadius:0,tension:0.4,order:1},
+      // Rug marks (hidden from legend, drawn by plugin)
+      {label:'ส่วนงาน',data:rugData,
+       backgroundColor:'rgba(0,120,212,0.0)',borderColor:'transparent',
+       pointRadius:0,order:5},
+    ]},
+    plugins:[vlinePlugin,rugPlugin],
     options:{
       responsive:true,maintainAspectRatio:false,
+      parsing:false,
       plugins:{
-        legend:{display:false},
+        legend:{display:true,labels:{
+          filter:item=>['±1SD','±2SD','±3SD','Normal PDF'].includes(item.text),
+          font:{size:11},boxWidth:14,padding:10,
+          generateLabels:chart=>[
+            {text:'เส้นโค้งปกติ (PDF)',strokeStyle:'#0078d4',fillStyle:'transparent',lineWidth:2,hidden:false},
+            {text:'±1SD (68.3%)',fillStyle:'rgba(0,120,212,0.22)',strokeStyle:'transparent',lineWidth:0,hidden:false},
+            {text:'±2SD (95.4%)',fillStyle:'rgba(202,80,16,0.18)',strokeStyle:'transparent',lineWidth:0,hidden:false},
+            {text:'±3SD (99.7%)',fillStyle:'rgba(209,52,56,0.14)',strokeStyle:'transparent',lineWidth:0,hidden:false},
+          ]
+        }},
         tooltip:{callbacks:{
+          title:ctx=>{
+            if(ctx[0].dataset.label==='Normal PDF')return `x = ${ctx[0].parsed.x.toFixed(2)}%`;
+            return null;
+          },
           label:ctx=>{
-            const d=ctx.raw.dept;
-            return [
-              ` ${d.codeStr} ${d.shortName}`,
-              ` % เบิก: ${d.pctActComm.toFixed(2)}%`,
-              ` แผน: ${fmt(d.budget)} บาท`,
-              ` จริง+ผูกพัน: ${fmt(d.actComm)} บาท`
-            ];
+            if(ctx.dataset.label==='Normal PDF')
+              return ` PDF: ${ctx.parsed.y.toFixed(5)}  |  z = ${((ctx.parsed.x-mn)/sd).toFixed(2)}σ`;
+            return null;
           }
-        },bodyFont:{size:12},titleFont:{size:13},padding:10}
+        },bodyFont:{size:12},titleFont:{size:13}}
       },
       scales:{
-        x:{
-          title:{display:true,text:'ส่วนงาน (เรียงตามงบจากมากไปน้อย)',font:{size:12}},
-          ticks:{
-            font:{size:11},
-            callback:(v)=>{
-              const d=sorted[v-1];
-              return d?d.codeStr:'';
-            }
-          },
-          grid:{color:'#eef2f7'},
-          min:0, max:sorted.length+1
-        },
-        y:{
-          title:{display:true,text:'ร้อยละการเบิกจ่าย (%)',font:{size:12}},
-          ticks:{font:{size:11},callback:v=>v+'%'},
-          grid:{color:'#eef2f7'},
-          min:0
-        }
+        x:{type:'linear',title:{display:true,text:'ร้อยละการเบิกจ่าย (%)',font:{size:13}},
+           ticks:{font:{size:12},callback:v=>v.toFixed(0)+'%'},grid:{color:'#eef2f7'}},
+        y:{title:{display:true,text:'ความหนาแน่นความน่าจะเป็น (PDF)',font:{size:12}},
+           ticks:{font:{size:11},callback:v=>v.toFixed(4)},grid:{color:'#eef2f7'}}
       }
     }
+  });
+}
+
+
+function buildWaterfall(data){
+  const tB=data.reduce((s,d)=>s+d.budget,0);
+  const tA=data.reduce((s,d)=>s+d.actual,0);
+  const tC=data.reduce((s,d)=>s+d.committed,0);
+  const tAC=data.reduce((s,d)=>s+d.actComm,0);
+  const tX=data.reduce((s,d)=>s+d.xfer,0);
+  const rem=tB-tAC;
+  // Steps: แผนงบ, โอนเพิ่ม, ใช้จริง(ลด), ผูกพัน(ลด), คงเหลือ
+  const labels=['แผนงบประมาณ','งบโอนเปลี่ยนแปลง','ใช้จริง','ผูกพัน','คงเหลือ'];
+  // Stacked bar trick: base (transparent) + bar value
+  // values: [0, tB, tB+tX, ... ]
+  const bases=[0, tB, tB+tX, tB+tX-tA, tB+tX-tA-tC];
+  const barVals=[tB, tX, tA, tC, rem<0?0:rem];
+  const barColors=['#0078d4','#8764b8','#d13438','#ca5010','#107c10'];
+  mkChart('waterfallChart',{type:'bar',
+    data:{labels,datasets:[
+      {label:'_base',data:bases,backgroundColor:'transparent',borderWidth:0,stack:'wf'},
+      {label:'มูลค่า',data:barVals,backgroundColor:barColors,borderWidth:0,borderRadius:4,stack:'wf'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{
+          label:ctx=>{if(ctx.datasetIndex===0)return null;return ` ${labels[ctx.dataIndex]}: ${fmt(ctx.parsed.y)} บาท`},
+        },bodyFont:{size:13},titleFont:{size:14}}},
+      scales:{x:{ticks:{font:{size:13}},grid:{display:false}},
+        y:{ticks:{font:{size:12},callback:v=>{const b=Math.abs(v);return b>=1e9?(b/1e9).toFixed(1)+'B':b>=1e6?(b/1e6).toFixed(0)+'M':b.toLocaleString()}},
+        grid:{color:'#eef2f7'}}}}
   });
 }
 
@@ -1133,7 +1225,7 @@ function clearFilter(){
 function rebuildCharts(){
   buildKPI(FILTERED);buildGauge(FILTERED);buildPctChart(FILTERED);
   buildTopBudget(FILTERED);buildXferChart(FILTERED);
-  buildBoxplot(FILTERED);buildBubble(FILTERED);
+  buildBoxplot(FILTERED);buildNormalCurve(FILTERED);buildWaterfall(FILTERED);
   buildCorrHeatmap(FILTERED);buildAnomalies(FILTERED);buildStats(FILTERED);
 }
 
